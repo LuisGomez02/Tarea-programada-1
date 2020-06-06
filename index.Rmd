@@ -1,0 +1,52 @@
+---
+title: "Tarea progaramda 1"
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: columns
+    vertical_layout: fill
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(leaflet)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+```
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Punto 1
+
+```{r}
+
+```
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Punto 2
+
+```{r}
+
+```
+
+### Punto 3
+
+```{r}
+
+```
+
+### Punto 4
+
+```{r}
+
+```
+
+### Punto 5
+
+```{r}
+
+```
+
