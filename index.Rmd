@@ -1,5 +1,5 @@
 ---
-title: "Tarea progaramda 1"
+title: "Tarea programada 1"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
