@@ -2,8 +2,7 @@
 title: "Tarea progaramda 1"
 output: 
   flexdashboard::flex_dashboard:
-    orientation: columns
-    vertical_layout: fill
+    orientation: rows
 ---
 
 ```{r setup, include=FALSE}
@@ -12,41 +11,163 @@ library(leaflet)
 library(ggplot2)
 library(knitr)
 library(kableExtra)
+library(sf)
+library(dplyr)
+# Registros de casos de COVID-19
+cr_covid <- st_read("https://raw.githubusercontent.com/geoprocesamiento-2020i/datos/master/covid19/casos/cr/cr-covid19-cantones.geojson")
+cr_covid_df = st_drop_geometry(cr_covid)
 ```
 
-Column {data-width=650}
+Column {.sidebar data-width=600}
 -----------------------------------------------------------------------
 
-### Punto 1
+### Mapas de los casos de Covid-19 en los cantones de CR
 
 ```{r}
-
+m <- leaflet(cr_covid)
+pal <- colorBin("Blues", cr_covid$confirmados, bins =7, pretty = TRUE, na.color = "white")
+m %>%  addPolygons(
+        fillColor = ~pal(confirmados),
+        weight = 1,
+        opacity = 2,
+        color = "black",
+        dashArray = "",
+        fillOpacity = 3,
+        popup = paste("Cantón:"
+             , cr_covid$canton
+             , "<br/>"
+             , "Casos Confirmados:"
+             , cr_covid$confirmados
+             , "<br/>"
+             , "Casos Activos:"
+             ,cr_covid$activos
+             , "<br/>"
+             , "Casos Recuperados:"
+             , cr_covid$recuperados
+             , "<br/>"
+             , "Casos Fallecidos:"
+             , cr_covid$muertes
+             , "<br/>"
+             ,  "<br>"
+             , "<a href='"
+             , cr_covid$geometry)) %>%
+   addLegend(pal = pal, values = ~confirmados, opacity = 0,7,
+             title = "Rango de casos confirmados",
+             position = "bottomright")
 ```
 
-Column {data-width=350}
+### Mapa de los casos de covid19 en las provincias de CR
+
+```{r}
+crp <- cr_covid %>%
+   group_by(provincia) %>%
+   summarize(confirmados= sum(confirmados, na.rm = TRUE), activos = sum(activos, na.rm = TRUE), fallecidos= sum(muertes, na.rm = TRUE), recuperados= sum(recuperados, na.rm = TRUE))
+   mp <- leaflet(crp)
+   pal <- colorBin("Reds", crp$confirmados, bins= 7, na.color = "white")
+   mp %>% addPolygons(
+      fillColor = ~pal(confirmados),
+      weight = 1,
+      opacity = 2,
+      color = "black",
+      dashArray = "",
+      fillOpacity = 3,
+      popup = paste( "Provincia:"
+                     , crp$provincia
+                     , '<br/>'
+                     , "Casos Confirmados:"
+                     , crp$confirmados
+                     , '<br/>'
+                     , "Casos Activos:"
+                     , crp$activos
+                     , '<br/>'
+                     , "Casos Recuperados:"
+                     , crp$recuperados
+                     , '<br/>'
+                     , "Casos Fallecidos:"
+                     , crp$fallecidos
+                     , '<br/>'
+                     , '<br>'
+                     , "<a href='"
+                     , crp$geometry)) %>%
+          addLegend(pal= pal, ~confirmados,
+                    opacity = 0,7,
+                    title= "Rango de casos confirmados",
+                    position = "bottomright")
+```
+
+Column {data-width=1200}
 -----------------------------------------------------------------------
 
-### Punto 2
+### Grafico de la cantidad de casos confirmados por provincia
 
 ```{r}
+cr_covid_grafico <- cr_covid_df %>% 
+  select(provincia, confirmados) %>% 
+  group_by(provincia) %>% 
+  summarize(confirmados = sum(confirmados, na.rm = TRUE)) %>% 
+  arrange(desc(confirmados))
 
+ggplot(cr_covid_grafico, aes(x=reorder(provincia, -confirmados), y=confirmados)) +
+  ggtitle("Casos confirmados de Covid-19 en Costa Rica") +
+  xlab("Provincias de Costa Rica") + 
+  ylab("Casos confirmados") +  
+  geom_col() +
+  geom_text(aes(label=confirmados), vjust=-0.3, size=3.5)
 ```
 
-### Punto 3
+
+Column {data-width=800}
+-----------------------------------------------------------------------
+
+### Tabla de casos confirmados, recuperados, fallecidos en cada cantón
 
 ```{r}
-
+cr_covid.orden <- order(cr_covid$canton)
+cr_covid.ordenadoxcanton <- cr_covid[cr_covid.orden,]
+kable(
+   cr_covid.ordenadoxcanton[, c("canton","confirmados","recuperados","muertes"), drop = TRUE], 
+   col.names=c("Cantón","Confirmados","Recuperados","Fallecidos"),  
+   caption="Casos de COVID-19 de los cantones de CR") %>%
+   kable_styling() %>%
+   scroll_box(
+   width = "800px",  
+   height = "500px", 
+   fixed_thead = TRUE)
 ```
 
-### Punto 4
+Row {data-height=200}
+-----------------------------------------------------------------------
+### Casos confirmados de Covid-19 en CR
 
 ```{r}
-
+cr_covid_confirmados <- cr_covid_df %>%
+  summarize(casos_confirmados = sum(confirmados, na.rm = TRUE))
+valueBox(cr_covid_confirmados, icon = "warning-outline")
 ```
 
-### Punto 5
+### Casos recuperados de Covid-19 en CR
 
 ```{r}
-
+cr_covid_recuperados <- cr_covid_df %>%
+  summarize(casos_recuperados = sum(recuperados, na.rm = TRUE))
+valueBox(cr_covid_recuperados, icon = "thumbs-up-outline")
 ```
 
+### Casos fallecidos de Covid-19 en CR
+
+```{r}
+cr_covid_fallecidos <- cr_covid_df %>%
+  summarize(casos_fallecidos = sum(muertes, na.rm = TRUE))
+valueBox(cr_covid_fallecidos, icon = "skull-outline")
+```
+
+### Casos activos de Covid-19 en CR
+
+```{r}
+cr_covid_activos <- cr_covid_df %>%
+  summarize(casos_activos = sum(activos, na.rm = TRUE))
+valueBox(cr_covid_activos, icon = "walk-outline")
+```
+
+Row {data-height=200}
+-----------------------------------------------------------------------
